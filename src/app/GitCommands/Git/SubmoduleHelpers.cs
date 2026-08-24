@@ -97,18 +97,18 @@ public static partial class SubmoduleHelpers
                     hash = line.AsSpan(pos + commitStr.Length);
                 }
 
+                bool endsWithDirty = hash.EndsWith("-dirty");
+                if (endsWithDirty)
+                {
+                    hash = hash[..^"-dirty".Length];
+                }
+
                 if (c == '-')
                 {
                     oldCommitId = ObjectId.Parse(hash);
                 }
                 else if (c == '+')
                 {
-                    bool endsWithDirty = hash.EndsWith("-dirty");
-                    if (endsWithDirty)
-                    {
-                        hash = hash[..^"-dirty".Length];
-                    }
-
                     commitId = ObjectId.Parse(hash);
                     isDirty = endsWithDirty;
                 }

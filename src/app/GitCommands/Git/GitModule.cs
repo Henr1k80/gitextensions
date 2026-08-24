@@ -998,7 +998,7 @@ public sealed partial class GitModule : IGitModule
         return Array.ConvertAll(GitExecutable.Execute(args, cache: GitCommandCache)
             .StandardOutput
             .Split(Delimiters.NullAndLineFeed, StringSplitOptions.RemoveEmptyEntries),
-            oId => ObjectId.Parse(oId));
+            id => ObjectId.Parse(id));
     }
 
     public IReadOnlyList<GitRevision> GetParentRevisions(ObjectId objectId)
