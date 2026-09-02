@@ -118,6 +118,43 @@ public static class LazyStringSplitExtensions
         return new(s, delimiter, options);
     }
 
+    public static IEnumerable<(int beginning, int length)> LazySplitRanges(this string stringToSplit, char delimiter, StringSplitOptions options = StringSplitOptions.None)
+    {
+        bool trim = (options & StringSplitOptions.TrimEntries) != 0;
+        bool removeEmpty = (options & StringSplitOptions.RemoveEmptyEntries) != 0;
+        int start = 0;
+        while (true)
+        {
+            int indexOfNextDelimiter = stringToSplit.IndexOf(delimiter, start);
+            int end = indexOfNextDelimiter < 0 ? stringToSplit.Length : indexOfNextDelimiter;
+            int beginningTrimmed = start, endTrimmed = end;
+            if (trim)
+            {
+                while (beginningTrimmed < endTrimmed && char.IsWhiteSpace(stringToSplit[beginningTrimmed]))
+                {
+                    beginningTrimmed++;
+                }
+
+                while (endTrimmed > beginningTrimmed && char.IsWhiteSpace(stringToSplit[endTrimmed - 1]))
+                {
+                    endTrimmed--;
+                }
+            }
+
+            if (!removeEmpty || beginningTrimmed != endTrimmed)
+            {
+                yield return (beginningTrimmed, endTrimmed - beginningTrimmed);
+            }
+
+            if (indexOfNextDelimiter < 0)
+            {
+                yield break;
+            }
+
+            start = indexOfNextDelimiter + 1;
+        }
+    }
+
     public static IEnumerable<T> Select<T>(this LazyStringSplit split, Func<string, T> func)
     {
         foreach (string value in split)

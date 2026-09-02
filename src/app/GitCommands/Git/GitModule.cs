@@ -2670,9 +2670,8 @@ public sealed partial class GitModule : IGitModule
     }
 
     public IReadOnlyList<GitItemStatus> GetTreeFiles(ObjectId commitId, bool full, CancellationToken cancellationToken = default)
-    {
-        return GetTreeAsList(commitId, full, cancellationToken: cancellationToken)
-            .ConvertAll(file => new GitItemStatus(file.Name)
+        => GetTree(commitId, full, cancellationToken: cancellationToken)
+            .Select(file => new GitItemStatus(file.Name)
             {
                 // IsTracked is always true, only tracked are reported
                 // (all with TreeId are tracked)
@@ -2685,8 +2684,8 @@ public sealed partial class GitModule : IGitModule
                 Staged = StagedStatus.Unset,
                 TreeId = file.ObjectId,
                 IsSubmodule = file.ObjectType == GitObjectType.Commit
-            });
-    }
+            })
+            .ToList();
 
     public IReadOnlyList<GitItemStatus> GetAllChangedFiles(bool excludeIgnoredFiles = true,
         bool excludeAssumeUnchangedFiles = true, bool excludeSkipWorktreeFiles = true,
@@ -3227,13 +3226,7 @@ public sealed partial class GitModule : IGitModule
             .Split(Delimiters.NullAndLineFeed);
     }
 
-    [Obsolete($"Use {nameof(GetTreeAsList)} instead")]
     public IEnumerable<IObjectGitItem> GetTree(ObjectId commitId, bool full, string fileName = "", CancellationToken cancellationToken = default)
-    {
-        return GetTreeAsList(commitId, full, fileName, cancellationToken);
-    }
-
-    public List<GitItem> GetTreeAsList(ObjectId commitId, bool full, string fileName = "", CancellationToken cancellationToken = default)
     {
         bool isArtificial = commitId.IsArtificial;
         if (isArtificial && !full)
@@ -3270,10 +3263,10 @@ public sealed partial class GitModule : IGitModule
 
         if (isArtificial && !GitVersion.SupportLsFilesFormat)
         {
-            return GitTreeParser.ParseLsFilesToList(result.StandardOutput);
+            return _gitTreeParser.ParseLsFiles(result.StandardOutput);
         }
 
-        return GitTreeParser.ParseToList(result.StandardOutput);
+        return _gitTreeParser.Parse(result.StandardOutput);
     }
 
     public GitBlame Blame(string? fileName, string from, Encoding encoding, string? lines, CancellationToken cancellationToken)
@@ -3562,8 +3555,8 @@ public sealed partial class GitModule : IGitModule
 
     public ObjectId GetFileBlobHash(string fileName, ObjectId objectId)
     {
-        List<GitItem> items = GetTreeAsList(objectId, full: true, fileName);
-        return items is [{ ObjectType: GitObjectType.Blob }]
+        IObjectGitItem[] items = [.. GetTree(objectId, full: true, fileName)];
+        return items.Length == 1 && items[0].ObjectType is GitObjectType.Blob
             ? items[0].ObjectId
             : default;
     }

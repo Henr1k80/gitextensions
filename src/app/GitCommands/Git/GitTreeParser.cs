@@ -51,39 +51,23 @@ public sealed partial class GitTreeParser : IGitTreeParser
 
     public string GitTreeFormat { get; } = "%(objectmode) %(objecttype) %(objectname)%x09%(path)";
 
-    [Obsolete($"Use {nameof(ParseToList)} instead")]
     public IEnumerable<GitItem> Parse(string? tree)
     {
-        return ParseToList(tree);
-    }
-
-    public static List<GitItem> ParseToList(string? tree)
-    {
-        List<GitItem> gitItems = [];
         if (string.IsNullOrWhiteSpace(tree))
         {
-            return gitItems;
+            yield break;
         }
 
-        foreach (Range range in tree.AsSpan().Split('\0'))
+        foreach ((int beginning, int length) in tree.LazySplitRanges('\0', StringSplitOptions.RemoveEmptyEntries))
         {
-            int beginning = range.Start.Value;
-            int length = range.End.Value - beginning;
-            if (length < 1)
-            {
-                continue;
-            }
-
             Match match = TreeLineRegex.Match(tree, beginning, length);
             if (!match.Success)
             {
                 continue;
             }
 
-            gitItems.Add(ParseSingleFromSuccessfulMatch(match));
+            yield return ParseSingleFromSuccessfulMatch(match);
         }
-
-        return gitItems;
     }
 
     public GitItem? ParseSingle(string? rawItem)
@@ -108,39 +92,23 @@ public sealed partial class GitTreeParser : IGitTreeParser
         return new GitItem(mode, type, objectId, name);
     }
 
-    [Obsolete($"Use {nameof(ParseLsFilesToList)} instead")]
     public IEnumerable<GitItem> ParseLsFiles(string? tree)
     {
-        return ParseLsFilesToList(tree);
-    }
-
-    public static List<GitItem> ParseLsFilesToList(string? tree)
-    {
-        List<GitItem> gitItems = [];
         if (string.IsNullOrWhiteSpace(tree))
         {
-            return gitItems;
+            yield break;
         }
 
-        foreach (Range range in tree.AsSpan().Split('\0'))
+        foreach ((int beginning, int length) in tree.LazySplitRanges('\0', StringSplitOptions.RemoveEmptyEntries))
         {
-            int beginning = range.Start.Value;
-            int length = range.End.Value - beginning;
-            if (length < 1)
-            {
-                continue;
-            }
-
             Match match = LsFilesLineRegex.Match(tree, beginning, length);
             if (!match.Success)
             {
                 continue;
             }
 
-            gitItems.Add(ParseSingleLsFromSuccessfulMatch(match));
+            yield return ParseSingleLsFromSuccessfulMatch(match);
         }
-
-        return gitItems;
     }
 
     private static GitItem ParseSingleLsFromSuccessfulMatch(Match match)
