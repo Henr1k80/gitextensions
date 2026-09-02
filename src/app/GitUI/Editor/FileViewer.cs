@@ -1622,17 +1622,23 @@ public partial class FileViewer : GitModuleControl
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        IEnumerable<IObjectGitItem> tree = Module.GetTree(commitId, full: true, file.Name, cancellationToken);
-        List<IObjectGitItem> items = tree as List<IObjectGitItem> ?? tree.ToList();
-        if (items.Count == 1)
+        using IEnumerator<IObjectGitItem> enumerator = Module.GetTree(commitId, full: true, file.Name, cancellationToken).GetEnumerator();
+        if (!enumerator.MoveNext())
         {
-            IObjectGitItem gitItem = items[0];
-            file.IsSubmodule = gitItem.ObjectType == GitObjectType.Commit;
-            file.TreeId = gitItem.ObjectId;
-            return commitId == ObjectId.WorkTreeId ? default : file.TreeId;
+            // file not found in tree
+            return default;
         }
 
-        return default;
+        IObjectGitItem gitItem = enumerator.Current;
+        if (enumerator.MoveNext())
+        {
+            // more than one item found
+            return default;
+        }
+
+        file.IsSubmodule = gitItem.ObjectType == GitObjectType.Commit;
+        file.TreeId = gitItem.ObjectId;
+        return commitId == ObjectId.WorkTreeId ? default : file.TreeId;
     }
 
     /// <summary>
