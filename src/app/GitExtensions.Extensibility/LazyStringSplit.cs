@@ -127,7 +127,8 @@ public static class LazyStringSplitExtensions
         {
             int indexOfNextDelimiter = stringToSplit.IndexOf(delimiter, start);
             int end = indexOfNextDelimiter < 0 ? stringToSplit.Length : indexOfNextDelimiter;
-            int beginningTrimmed = start, endTrimmed = end;
+            int beginningTrimmed = start;
+            int endTrimmed = end;
             if (trim)
             {
                 while (beginningTrimmed < endTrimmed && char.IsWhiteSpace(stringToSplit[beginningTrimmed]))
