@@ -120,8 +120,8 @@ public static class LazyStringSplitExtensions
 
     public static IEnumerable<(int beginning, int length)> LazySplitRanges(this string stringToSplit, char delimiter, StringSplitOptions options = StringSplitOptions.None)
     {
-        bool trim = (options & StringSplitOptions.TrimEntries) != 0;
-        bool removeEmpty = (options & StringSplitOptions.RemoveEmptyEntries) != 0;
+        bool trim = options.HasFlag(StringSplitOptions.TrimEntries);
+        bool removeEmpty = options.HasFlag(StringSplitOptions.RemoveEmptyEntries);
         int start = 0;
         while (true)
         {
